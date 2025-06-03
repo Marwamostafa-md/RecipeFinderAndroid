@@ -22,7 +22,7 @@ The application follows the **MVVM (Model-View-ViewModel)** architecture pattern
 ## Technologies Used
 
 - **Kotlin** – Primary programming language.
-- **Android Jetpack Components** – ViewModel, LiveData, Navigation, Room, DataStore.
+- **Android Jetpack Components** – ViewModel
 - **Retrofit** – For network operations.
 - **Kotlin Coroutines** – For asynchronous programming.
 - **Hilt** – For dependency injection.
