@@ -8,7 +8,7 @@ The app allows users to search for recipes, filter them by dietary preferences (
 - **Recipe Search**: Search for recipes using keywords.
 - **Filter Options**: Filter recipes based on dietary preferences such as vegetarian or non-vegetarian.
 - **Recipe Details**: View comprehensive details about each recipe, including ingredients and preparation steps.
-
+- **Offline Support**: Access recipes offline with local caching using Room database.
 
 ## Architecture
 
@@ -24,7 +24,7 @@ The application follows the **MVVM (Model-View-ViewModel)** architecture pattern
 - **Kotlin** – Primary programming language.
 - **Android Jetpack Components** – ViewModel
 - **Retrofit** – For network operations.
-- **Kotlin Coroutines** – For asynchronous programming.
+- **Kotlin Coroutines & Flow** – Asynchronous and reactive programming.
 - **Hilt** – For dependency injection.
 
 ## Getting Started
