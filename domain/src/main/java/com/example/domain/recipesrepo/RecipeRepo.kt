@@ -2,12 +2,12 @@ package com.example.domain.recipesrepo
 
 import com.example.domain.models.RecipeDetailsModel
 import com.example.domain.models.RecipeModel
+import kotlinx.coroutines.flow.Flow
 
 interface RecipeRepo {
-    suspend fun getAllRecipes(): List<RecipeModel>
-    suspend fun getRecipeDetails(id: Int): RecipeDetailsModel
-    suspend fun searchRecipes(query:String): List<RecipeModel>
-    suspend fun getCountryCategories(country:String): List<RecipeModel>
-    suspend fun getMealCategories(type:String): List<RecipeModel>
-
+    fun getAllRecipes(): Flow<List<RecipeModel>>
+    fun getRecipeDetails(id: Int): Flow<RecipeDetailsModel>
+    fun searchRecipes(query: String): Flow<List<RecipeModel>>
+    fun getCountryCategories(country: String): Flow<List<RecipeModel>>
+    fun getMealCategories(type: String): Flow<List<RecipeModel>>
 }

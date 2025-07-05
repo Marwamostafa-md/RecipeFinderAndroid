@@ -8,55 +8,52 @@ import com.example.domain.usecase.GetRecipesByCountry
 import com.example.domain.usecase.GetRecipesByType
 import com.example.recipesfinder.mapper.RecipesDomainToRecipeAppMpdel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
+import javax.inject.Named
 
 @HiltViewModel
 class RecipesViewModel @Inject constructor(
-    val getRecipesUseCase: GetAllRecipes,
-    val getRecipesByType: GetRecipesByType,
-    val getRecipeByCountry: GetRecipesByCountry
+    private val getRecipesUseCase: GetAllRecipes,
+    private val getRecipesByType: GetRecipesByType,
+    private val getRecipeByCountry: GetRecipesByCountry,
+    @Named("IO") private val dispatcherIO: CoroutineDispatcher
 ) : ViewModel() {
-    private val _recipeState: MutableStateFlow<RecipeState?> = MutableStateFlow(RecipeState())
-    val recipeState: StateFlow<RecipeState?> = _recipeState
+
+    private val _recipeState = MutableStateFlow(RecipeState())
+    val recipeState: StateFlow<RecipeState> = _recipeState
+
     fun getRecipes(
         isCategory: Boolean = false,
         typeOrCountry: String? = null,
         category: String = ""
     ) {
-        viewModelScope.launch {
-            try {
-                _recipeState.value = _recipeState.value?.copy(Loading = true)
-                if (isCategory) {
-                    when (typeOrCountry) {
-                        "type" -> {
-                            val Recipes =
-                                getRecipesByType(category).map { it -> it.RecipesDomainToRecipeAppMpdel() }
-                            _recipeState.value =
-                                _recipeState.value?.copy(Loading = false, recipes = Recipes)
-                        }
+        _recipeState.value = _recipeState.value.copy(Loading = true)
 
-                        "country" -> {
-                            val Recipes =
-                                getRecipeByCountry(category).map { it -> it.RecipesDomainToRecipeAppMpdel() }
-                            _recipeState.value =
-                                _recipeState.value?.copy(Loading = false, recipes = Recipes)
-                        }
-                    }
-                } else {
-                    val recipe =
-                        getRecipesUseCase().map { it -> it.RecipesDomainToRecipeAppMpdel() }
-                    _recipeState.value =
-                        _recipeState.value?.copy(Loading = false, recipes = recipe)
-                    Log.e("Recipes///////////", recipe.toString())
-                    recipe.forEach { print(it) }
-                }
-            } catch (e: Exception) {
-                Log.e("RecipeDetailsViewModel", e.message.toString())
-                _recipeState.value = _recipeState.value?.copy(Loading = false, error = e)
-            }
+        val flow = when {
+            isCategory && typeOrCountry == "type" -> getRecipesByType(category)
+            isCategory && typeOrCountry == "country" -> getRecipeByCountry(category)
+            else -> getRecipesUseCase()
         }
+
+        flow
+            .flowOn(dispatcherIO)
+            .map { list -> list.map { it.RecipesDomainToRecipeAppMpdel() } }
+            .onEach { recipes ->
+                _recipeState.value = _recipeState.value.copy(
+                    Loading = false,
+                    recipes = recipes,
+                    error = null
+                )
+            }
+            .catch { e ->
+                Log.e("RecipesViewModel", e.message ?: "Unknown Error")
+                _recipeState.value = _recipeState.value.copy(
+                    Loading = false,
+                    error = e
+                )
+            }
+            .launchIn(viewModelScope)
     }
 }

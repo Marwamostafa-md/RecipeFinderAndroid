@@ -6,38 +6,42 @@ import androidx.lifecycle.viewModelScope
 import com.example.domain.usecase.GetRecipesDetails
 import com.example.recipesfinder.mapper.toAppDetails
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import javax.inject.Named
+
 @HiltViewModel
 class RecipeDetailsViewModel @Inject constructor(
-    val getRecipesDetails: GetRecipesDetails
+    private val getRecipesDetails: GetRecipesDetails,
+    @Named("IO") private val dispatcherIO: CoroutineDispatcher
 ) : ViewModel() {
+
     private val _recipeDetailsState: MutableStateFlow<RecipeDetailsState?> =
         MutableStateFlow(RecipeDetailsState())
     val recipeDetailsState: StateFlow<RecipeDetailsState?> = _recipeDetailsState
+
     fun getDetails(id: Int) {
+        _recipeDetailsState.value = _recipeDetailsState.value?.copy(Loading = true)
 
-        viewModelScope.launch {
-            try {
-                _recipeDetailsState.value = _recipeDetailsState.value?.copy(Loading = true)
-                val recipedetails =
-                    getRecipesDetails(id).toAppDetails()
-                _recipeDetailsState.value =
-                    _recipeDetailsState.value?.copy(
-                        Loading = false,
-                        recipeDetails = recipedetails
-                    )
-
-            } catch (e: Exception) {
-                Log.e("RecipeDetailsViewModel", e.message.toString())
-                _recipeDetailsState.value =
-                    _recipeDetailsState.value?.copy(Loading = false, error = e)
+        getRecipesDetails(id)
+            .flowOn(dispatcherIO)
+            .map { it.toAppDetails() }
+            .onEach { details ->
+                _recipeDetailsState.value = _recipeDetailsState.value?.copy(
+                    Loading = false,
+                    recipeDetails = details,
+                    error = null
+                )
             }
-        }
-
+            .catch { e ->
+                Log.e("RecipeDetailsViewModel", e.message ?: "Unknown Error")
+                _recipeDetailsState.value = _recipeDetailsState.value?.copy(
+                    Loading = false,
+                    error = e
+                )
+            }
+            .launchIn(viewModelScope)
     }
-
-
 }
